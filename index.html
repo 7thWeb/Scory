@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Score Keeper + Random Trivia (Modified Settings)</title>
+  <title>Score Keeper + Random Trivia (Extended Emojis & Auto-Save)</title>
   <style>
     /* Reset and base styles */
     * {
@@ -17,8 +17,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      /* We'll apply the user-chosen background color dynamically in JS */
-      background: linear-gradient(to right, #1e1e1e, #2a2a2a);
+      background: linear-gradient(to right, #1e1e1e, #2a2a2a); /* default BG */
       color: #f0f0f0;
       overflow-x: hidden; /* Prevent horizontal scrollbar from confetti */
       position: relative;
@@ -53,7 +52,7 @@
       background-size: cover;
       cursor: pointer;
       opacity: 0.8;
-      filter: brightness(0) invert(0.9); /* Makes icon light-gray */
+      filter: brightness(0) invert(0.9); /* Light-gray gear icon */
       transition: opacity 0.3s;
     }
     .settings-icon:hover {
@@ -92,21 +91,7 @@
       margin: 4px 0;
     }
 
-    .save-settings-btn {
-      margin-top: 10px;
-      display: inline-block;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      background-color: #4CAF50;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .save-settings-btn:hover {
-      background-color: #45a049;
-    }
+    /* Removed the explicit save-settings-btn; we auto-save on input */
 
     /********************************************************************
      * Trivia Section (Below Title)
@@ -212,13 +197,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 220px;
+      width: 260px;
       background-color: #2e2e2e;
       border: 1px solid #444;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
       padding: 15px;
       transition: transform 0.3s;
+      position: relative;
     }
     .player:hover {
       transform: translateY(-2px);
@@ -285,6 +271,39 @@
       color: #f0f0f0;
     }
 
+    /* The 4 "power" boxes with emojis */
+    .power-boxes {
+      display: flex;
+      justify-content: space-evenly;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .power-box {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #777;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.3s, background-color 0.2s;
+      background-color: #444;
+      font-size: 1.5rem;
+      user-select: none;
+      position: relative;
+    }
+    .power-box:hover {
+      opacity: 0.8;
+    }
+    .power-box.faded {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Hover tooltips using title attribute: 
+       or we can do custom if you want. For simplicity, we rely on title. */
+
     button {
       padding: 6px 10px;
       font-size: 1rem;
@@ -293,7 +312,6 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-
     .minusBtn {
       background-color: #e74c3c;
       color: #fff;
@@ -301,7 +319,6 @@
     .minusBtn:hover {
       background-color: #c0392b;
     }
-
     .plusBtn {
       background-color: #27ae60;
       color: #fff;
@@ -309,7 +326,6 @@
     .plusBtn:hover {
       background-color: #1e824c;
     }
-
     .deleteBtn {
       margin-top: 10px;
       background-color: #ffaf4f;
@@ -400,6 +416,7 @@
       z-index: 10000; /* Above confetti */
       align-items: center;
       justify-content: center;
+      text-align: center;
     }
 
     #winnerModalContent {
@@ -407,8 +424,7 @@
       border: 2px solid #666;
       border-radius: 8px;
       padding: 20px;
-      max-width: 400px;
-      text-align: center;
+      max-width: 500px;
       color: #f0f0f0;
       box-shadow: 0 0 10px rgba(0,0,0,0.8);
     }
@@ -416,6 +432,12 @@
     #winnerModalContent h2 {
       margin-bottom: 15px;
       font-size: 1.8rem;
+    }
+    #scoreboardList {
+      text-align: left;
+      margin-top: 20px;
+      border-top: 1px solid #555;
+      padding-top: 10px;
     }
 
     #winnerModalClose {
@@ -427,6 +449,7 @@
       border-radius: 6px;
       cursor: pointer;
       transition: background-color 0.2s;
+      margin-top: 20px;
     }
     #winnerModalClose:hover {
       background-color: #1e824c;
@@ -469,10 +492,8 @@
       <label for="typeBoolean">True/False</label>
     </div>
 
-    <!-- Category Options (hide IDs) -->
+    <!-- Category Options (Hide IDs in label) -->
     <div class="section-title">Categories:</div>
-    <!-- Feel free to add or remove categories here. 
-         The "value" is the numeric ID, but the label hides it. -->
     <div class="settings-option">
       <input type="checkbox" id="cat9" name="category" value="9" checked />
       <label for="cat9">General Knowledge</label>
@@ -564,8 +585,6 @@
       <label for="bgColor">Background Color:</label>
       <input type="color" id="bgColor" name="bgColor" value="#1e1e1e" />
     </div>
-
-    <button class="save-settings-btn" id="saveSettingsBtn">Save Settings</button>
   </div>
 
   <!-- Trivia Section Below Title -->
@@ -601,6 +620,8 @@
   <div id="winnerModal">
     <div id="winnerModalContent">
       <h2 id="winnerMessage">We have a winner!</h2>
+      <!-- Show scoreboard here -->
+      <div id="scoreboardList"></div>
       <button id="winnerModalClose" onclick="closeWinnerModal()">Close</button>
     </div>
   </div>
@@ -618,11 +639,8 @@
     let selectedCategories = ['9', '11', '18', '23']; // default example
     let selectedBgColor = '#1e1e1e'; // default background color
 
-    /********************************************************************
-     * EVENTS ON PAGE LOAD
-     ********************************************************************/
     window.addEventListener('DOMContentLoaded', () => {
-      // Bottom buttons
+      // Scoreboard / bottom controls
       document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
       document.getElementById('resetScoresBtn').addEventListener('click', resetAllScores);
       document.getElementById('goalInput').addEventListener('input', updateAllProgressBars);
@@ -633,7 +651,9 @@
 
       // Settings icon
       document.getElementById('settingsIcon').addEventListener('click', toggleSettingsPanel);
-      document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
+      // Instead of a save button, we auto-save on any input changes
+      document.getElementById('settingsPanel').addEventListener('input', autoSaveSettings);
     });
 
     /********************************************************************
@@ -679,6 +699,56 @@
       nameInput.type = 'text';
       nameInput.value = 'Player ' + playerCount;
 
+      // ============ POWER BOXES (4 BOXES) ============
+      const powerBoxesDiv = document.createElement('div');
+      powerBoxesDiv.className = 'power-boxes';
+
+      // (1) ⭐: Get 2 Points
+      const boxStar = document.createElement('div');
+      boxStar.className = 'power-box';
+      boxStar.textContent = '⭐';
+      boxStar.title = '⭐ Get 2 Points On This Question';
+      boxStar.onclick = function() {
+        boxStar.classList.add('faded');
+        // Implement logic: e.g. awarding 2 points to this player on the next question
+        // For simplicity, we'll just "use it up" visually here.
+      };
+
+      // (2) ✌: Double Answer
+      const boxPeace = document.createElement('div');
+      boxPeace.className = 'power-box';
+      boxPeace.textContent = '✌';
+      boxPeace.title = '✌ Double Answer';
+      boxPeace.onclick = function() {
+        boxPeace.classList.add('faded');
+        // Implement logic: e.g. doubling correct answer?
+      };
+
+      // (3) 🛑: Skip a Player's Turn
+      const boxStop = document.createElement('div');
+      boxStop.className = 'power-box';
+      boxStop.textContent = '🛑';
+      boxStop.title = '🛑 Skip A Player\'s Turn';
+      boxStop.onclick = function() {
+        boxStop.classList.add('faded');
+        // Implement logic: e.g. skipping next turn of another player
+      };
+
+      // (4) ➖: Deduct 1 Point
+      const boxMinus = document.createElement('div');
+      boxMinus.className = 'power-box';
+      boxMinus.textContent = '➖';
+      boxMinus.title = '➖ Deduct 1 Point From Any Player';
+      boxMinus.onclick = function() {
+        boxMinus.classList.add('faded');
+        // Implement logic: e.g. minus 1 point from chosen player
+      };
+
+      powerBoxesDiv.appendChild(boxStar);
+      powerBoxesDiv.appendChild(boxPeace);
+      powerBoxesDiv.appendChild(boxStop);
+      powerBoxesDiv.appendChild(boxMinus);
+
       // Score controls
       const scoreControlsDiv = document.createElement('div');
       scoreControlsDiv.className = 'score-controls';
@@ -695,7 +765,7 @@
       plusBtn.textContent = '+';
       plusBtn.className = 'plusBtn';
 
-      // Events
+      // Score increment/decrement
       minusBtn.onclick = function() {
         let currentScore = parseInt(scoreSpan.textContent);
         scoreSpan.textContent = currentScore - 1;
@@ -720,6 +790,9 @@
       playerDiv.appendChild(colorIcon);
       playerDiv.appendChild(colorPicker);
       playerDiv.appendChild(nameInput);
+
+      // Attach the 4 power boxes
+      playerDiv.appendChild(powerBoxesDiv);
 
       scoreControlsDiv.appendChild(minusBtn);
       scoreControlsDiv.appendChild(scoreSpan);
@@ -773,8 +846,32 @@
       }
     }
 
-    function showWinnerModal(playerName) {
-      document.getElementById('winnerMessage').textContent = `${playerName} has reached the goal!`;
+    function showWinnerModal(winnerName) {
+      const winnerMessage = document.getElementById('winnerMessage');
+      winnerMessage.textContent = `${winnerName} has reached the goal!`;
+
+      // Also show scoreboard in order of highest -> lowest
+      // 1) Collect all players & scores
+      const players = document.querySelectorAll('.player');
+      let scoreData = [];
+      players.forEach(player => {
+        const scoreSpan = player.querySelector('.score');
+        const nameInput = player.querySelector('input[type="text"]');
+        const scoreValue = parseInt(scoreSpan.textContent);
+        scoreData.push({ name: nameInput.value, score: scoreValue });
+      });
+      // 2) Sort descending
+      scoreData.sort((a, b) => b.score - a.score);
+
+      // 3) Build scoreboard text
+      let scoreboardText = '<h3>Final Scores</h3><ul>';
+      scoreData.forEach(item => {
+        scoreboardText += `<li><strong>${item.name}</strong>: ${item.score}</li>`;
+      });
+      scoreboardText += '</ul>';
+
+      document.getElementById('scoreboardList').innerHTML = scoreboardText;
+
       document.getElementById('winnerModal').style.display = 'flex';
     }
 
@@ -840,7 +937,8 @@
       }
     }
 
-    function saveSettings() {
+    // Called on every input change in the settings panel
+    function autoSaveSettings() {
       // Collect selected difficulties
       const diffBoxes = document.querySelectorAll('input[name="difficulty"]:checked');
       selectedDifficulties = Array.from(diffBoxes).map(box => box.value);
@@ -868,16 +966,8 @@
         selectedCategories = ['9']; // fallback to 9 (General Knowledge)
       }
 
-      // Apply the chosen background color
+      // Apply the chosen background color right away
       document.body.style.background = selectedBgColor;
-
-      alert('Settings saved!\n' +
-        `Difficulties: ${selectedDifficulties.join(', ')}\n` +
-        `Types: ${selectedTypes.join(', ')}\n` +
-        `Categories: ${selectedCategories.join(', ')}\n` +
-        `Background Color: ${selectedBgColor}`
-      );
-      toggleSettingsPanel();
     }
 
     /********************************************************************
@@ -892,14 +982,11 @@
 
     // Handle the button click + cooldown
     function handleTriviaButtonClick() {
-      // Start a 5-second cooldown
       startTriviaCooldown();
-
-      // Fetch the actual question
       fetchRandomQuestion();
     }
 
-    // Start a 5s cooldown, disabling the button & counting down
+    // 5s cooldown
     function startTriviaCooldown() {
       const button = document.getElementById('triviaButton');
       button.disabled = true;
@@ -916,7 +1003,7 @@
       }, 1000);
     }
 
-    // Combine user-selected difficulties, types, categories to build a random request
+    // Combine user-selected difficulties, types, categories
     async function fetchRandomQuestion() {
       // 1) Randomly pick from selected difficulties
       const randomDiff = selectedDifficulties[Math.floor(Math.random() * selectedDifficulties.length)];
