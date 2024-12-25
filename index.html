@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Score Keeper + Random Trivia (Cooldown & Easy/Medium)</title>
+  <title>Score Keeper + Random Trivia (Modified Settings)</title>
   <style>
     /* Reset and base styles */
     * {
@@ -17,12 +17,14 @@
 
     body {
       font-family: Arial, sans-serif;
+      /* We'll apply the user-chosen background color dynamically in JS */
       background: linear-gradient(to right, #1e1e1e, #2a2a2a);
       color: #f0f0f0;
       overflow-x: hidden; /* Prevent horizontal scrollbar from confetti */
       position: relative;
       display: flex;
       flex-direction: column;
+      transition: background-color 0.3s; /* Smooth transition for BG color */
     }
 
     /********************************************************************
@@ -36,6 +38,74 @@
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
       outline: none; /* Hide outline on focus */
       cursor: text;
+    }
+
+    /********************************************************************
+     * Settings Icon & Panel
+     ********************************************************************/
+    .settings-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 30px;
+      height: 30px;
+      background: url('https://cdn-icons-png.flaticon.com/512/3524/3524659.png') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
+      opacity: 0.8;
+      filter: brightness(0) invert(0.9); /* Makes icon light-gray */
+      transition: opacity 0.3s;
+    }
+    .settings-icon:hover {
+      opacity: 1;
+    }
+
+    #settingsPanel {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      width: 260px;
+      background-color: #333;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 15px;
+      display: none; /* Hidden by default */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      z-index: 20000; /* Above everything else */
+    }
+
+    #settingsPanel h2 {
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    #settingsPanel label {
+      cursor: pointer;
+    }
+
+    #settingsPanel .section-title {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .settings-option {
+      margin: 4px 0;
+    }
+
+    .save-settings-btn {
+      margin-top: 10px;
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .save-settings-btn:hover {
+      background-color: #45a049;
     }
 
     /********************************************************************
@@ -59,12 +129,9 @@
       color: #fff;
       transition: background-color 0.2s;
     }
-
     #triviaButton:hover:enabled {
       background-color: #45a049;
     }
-
-    /* Disabled button style */
     #triviaButton:disabled {
       background-color: #888; 
       cursor: not-allowed;
@@ -97,7 +164,6 @@
       color: #fff;
       transition: background-color 0.2s;
     }
-
     #revealBtn:hover {
       background-color: #c9302c;
     }
@@ -371,6 +437,137 @@
   <!-- Editable Title -->
   <h1 contenteditable="true">Click here to edit the title</h1>
 
+  <!-- Settings Icon -->
+  <div class="settings-icon" id="settingsIcon" title="Open Settings"></div>
+
+  <!-- Settings Panel -->
+  <div id="settingsPanel">
+    <h2>Trivia Settings</h2>
+    <!-- Difficulty Options -->
+    <div class="section-title">Difficulty:</div>
+    <div class="settings-option">
+      <input type="checkbox" id="diffEasy" name="difficulty" value="easy" checked />
+      <label for="diffEasy">Easy</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="diffMedium" name="difficulty" value="medium" checked />
+      <label for="diffMedium">Medium</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="diffHard" name="difficulty" value="hard" />
+      <label for="diffHard">Hard</label>
+    </div>
+
+    <!-- Type Options -->
+    <div class="section-title">Type:</div>
+    <div class="settings-option">
+      <input type="checkbox" id="typeMultiple" name="qtype" value="multiple" checked />
+      <label for="typeMultiple">Multiple Choice</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="typeBoolean" name="qtype" value="boolean" checked />
+      <label for="typeBoolean">True/False</label>
+    </div>
+
+    <!-- Category Options (hide IDs) -->
+    <div class="section-title">Categories:</div>
+    <!-- Feel free to add or remove categories here. 
+         The "value" is the numeric ID, but the label hides it. -->
+    <div class="settings-option">
+      <input type="checkbox" id="cat9" name="category" value="9" checked />
+      <label for="cat9">General Knowledge</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat10" name="category" value="10" />
+      <label for="cat10">Books</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat11" name="category" value="11" checked />
+      <label for="cat11">Film</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat12" name="category" value="12" />
+      <label for="cat12">Music</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat15" name="category" value="15" />
+      <label for="cat15">Video Games</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat16" name="category" value="16" />
+      <label for="cat16">Board Games</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat18" name="category" value="18" checked />
+      <label for="cat18">Computers</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat19" name="category" value="19" />
+      <label for="cat19">Mathematics</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat20" name="category" value="20" />
+      <label for="cat20">Mythology</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat21" name="category" value="21" />
+      <label for="cat21">Sports</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat22" name="category" value="22" />
+      <label for="cat22">Geography</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat23" name="category" value="23" checked />
+      <label for="cat23">History</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat24" name="category" value="24" />
+      <label for="cat24">Politics</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat25" name="category" value="25" />
+      <label for="cat25">Art</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat26" name="category" value="26" />
+      <label for="cat26">Celebrities</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat27" name="category" value="27" />
+      <label for="cat27">Animals</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat28" name="category" value="28" />
+      <label for="cat28">Vehicles</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat29" name="category" value="29" />
+      <label for="cat29">Comics</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat30" name="category" value="30" />
+      <label for="cat30">Gadgets</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat31" name="category" value="31" />
+      <label for="cat31">Japanese Anime &amp; Manga</label>
+    </div>
+    <div class="settings-option">
+      <input type="checkbox" id="cat32" name="category" value="32" />
+      <label for="cat32">Cartoon &amp; Animations</label>
+    </div>
+
+    <!-- UI Appearance Options -->
+    <div class="section-title">UI Appearance:</div>
+    <div class="settings-option">
+      <label for="bgColor">Background Color:</label>
+      <input type="color" id="bgColor" name="bgColor" value="#1e1e1e" />
+    </div>
+
+    <button class="save-settings-btn" id="saveSettingsBtn">Save Settings</button>
+  </div>
+
   <!-- Trivia Section Below Title -->
   <div id="triviaSection">
     <button id="triviaButton">Get Random Question</button>
@@ -415,6 +612,12 @@
     let playerCount = 0;
     let gameOver = false; // Prevent multiple celebrations
 
+    // We'll store the user's chosen difficulties, types, categories, BG color:
+    let selectedDifficulties = ['easy', 'medium']; // default
+    let selectedTypes = ['multiple', 'boolean'];   // default
+    let selectedCategories = ['9', '11', '18', '23']; // default example
+    let selectedBgColor = '#1e1e1e'; // default background color
+
     /********************************************************************
      * EVENTS ON PAGE LOAD
      ********************************************************************/
@@ -427,6 +630,10 @@
       // Trivia
       document.getElementById('triviaButton').addEventListener('click', handleTriviaButtonClick);
       document.getElementById('revealBtn').addEventListener('click', revealAnswer);
+
+      // Settings icon
+      document.getElementById('settingsIcon').addEventListener('click', toggleSettingsPanel);
+      document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
     });
 
     /********************************************************************
@@ -622,46 +829,73 @@
     }
 
     /********************************************************************
-     * RANDOM TRIVIA (Only Easy or Medium) + 5s COOLDOWN
+     * SETTINGS PANEL LOGIC
      ********************************************************************/
+    function toggleSettingsPanel() {
+      const panel = document.getElementById('settingsPanel');
+      if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+      }
+    }
 
-    // Helper to decode HTML entities
+    function saveSettings() {
+      // Collect selected difficulties
+      const diffBoxes = document.querySelectorAll('input[name="difficulty"]:checked');
+      selectedDifficulties = Array.from(diffBoxes).map(box => box.value);
+
+      // Collect selected types
+      const typeBoxes = document.querySelectorAll('input[name="qtype"]:checked');
+      selectedTypes = Array.from(typeBoxes).map(box => box.value);
+
+      // Collect selected categories
+      const catBoxes = document.querySelectorAll('input[name="category"]:checked');
+      selectedCategories = Array.from(catBoxes).map(box => box.value);
+
+      // Collect background color
+      const bgColorInput = document.getElementById('bgColor');
+      selectedBgColor = bgColorInput.value;
+
+      // If nothing is selected in a category, fallback to some default
+      if (selectedDifficulties.length === 0) {
+        selectedDifficulties = ['easy', 'medium'];
+      }
+      if (selectedTypes.length === 0) {
+        selectedTypes = ['multiple', 'boolean'];
+      }
+      if (selectedCategories.length === 0) {
+        selectedCategories = ['9']; // fallback to 9 (General Knowledge)
+      }
+
+      // Apply the chosen background color
+      document.body.style.background = selectedBgColor;
+
+      alert('Settings saved!\n' +
+        `Difficulties: ${selectedDifficulties.join(', ')}\n` +
+        `Types: ${selectedTypes.join(', ')}\n` +
+        `Categories: ${selectedCategories.join(', ')}\n` +
+        `Background Color: ${selectedBgColor}`
+      );
+      toggleSettingsPanel();
+    }
+
+    /********************************************************************
+     * RANDOM TRIVIA + 5s COOLDOWN
+     ********************************************************************/
+    // A helper to decode HTML entities
     function decodeHTML(html) {
       const txt = document.createElement('textarea');
       txt.innerHTML = html;
       return txt.value;
     }
 
-    // Instead of easy/medium/hard, only pick easy or medium
-    function getRandomDifficulty() {
-      const diffs = ['easy', 'medium'];
-      return diffs[Math.floor(Math.random() * diffs.length)];
-    }
-
-    // Keep category random, but omit 'hard' from possibilities
-    function getRandomCategory() {
-      // Category IDs from 9 to 32
-      return Math.floor(Math.random() * (32 - 9 + 1)) + 9;
-    }
-    function getRandomType() {
-      const types = ['multiple', 'boolean'];
-      return types[Math.floor(Math.random() * types.length)];
-    }
-
-    // Shuffle array in-place (Fisher-Yates)
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-    }
-
-    // This function handles the button click + cooldown
+    // Handle the button click + cooldown
     function handleTriviaButtonClick() {
-      // 1) Start a 5-second cooldown
+      // Start a 5-second cooldown
       startTriviaCooldown();
 
-      // 2) Fetch the actual question
+      // Fetch the actual question
       fetchRandomQuestion();
     }
 
@@ -682,12 +916,16 @@
       }, 1000);
     }
 
+    // Combine user-selected difficulties, types, categories to build a random request
     async function fetchRandomQuestion() {
-      const category = getRandomCategory();
-      const difficulty = getRandomDifficulty();
-      const qType = getRandomType();
+      // 1) Randomly pick from selected difficulties
+      const randomDiff = selectedDifficulties[Math.floor(Math.random() * selectedDifficulties.length)];
+      // 2) Randomly pick from selected types
+      const randomType = selectedTypes[Math.floor(Math.random() * selectedTypes.length)];
+      // 3) Randomly pick from selected categories
+      const randomCat = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
 
-      const url = `https://opentdb.com/api.php?amount=1&category=${category}&difficulty=${difficulty}&type=${qType}`;
+      const url = `https://opentdb.com/api.php?amount=1&category=${randomCat}&difficulty=${randomDiff}&type=${randomType}`;
 
       try {
         const response = await fetch(url);
@@ -740,7 +978,6 @@
             choicesList.appendChild(li);
             choicesList.classList.remove('hidden');
           }
-
         } else {
           // No questions found
           questionText.textContent = 'No questions found. Please try again.';
@@ -762,6 +999,14 @@
         answerText.classList.add('hidden');
         choicesList.classList.add('hidden');
         triviaContainer.classList.remove('hidden');
+      }
+    }
+
+    // Fisher-Yates shuffle
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
     }
 
