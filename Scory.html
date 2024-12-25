@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Score Keeper + Random Trivia (Cooldown & Easy/Medium)</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1e1e1e, #2a2a2a);
+      color: #f0f0f0;
+      overflow-x: hidden; /* Prevent horizontal scrollbar from confetti */
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /********************************************************************
+     * Title
+     ********************************************************************/
+    h1[contenteditable="true"] {
+      text-align: center;
+      font-size: 2.5rem;  /* Larger font size */
+      padding: 20px;      /* Extra padding around the title */
+      color: #ffffff;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      outline: none; /* Hide outline on focus */
+      cursor: text;
+    }
+
+    /********************************************************************
+     * Trivia Section (Below Title)
+     ********************************************************************/
+    #triviaSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    #triviaButton {
+      padding: 10px 20px;
+      margin: 10px 0;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: #fff;
+      transition: background-color 0.2s;
+    }
+
+    #triviaButton:hover:enabled {
+      background-color: #45a049;
+    }
+
+    /* Disabled button style */
+    #triviaButton:disabled {
+      background-color: #888; 
+      cursor: not-allowed;
+    }
+
+    .trivia-container {
+      background: #2e2e2e;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 20px;
+      max-width: 600px;
+      width: 90%;
+      text-align: left;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    #questionText {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    #revealBtn {
+      padding: 6px 10px;
+      margin: 10px 0;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background-color: #d9534f;
+      color: #fff;
+      transition: background-color 0.2s;
+    }
+
+    #revealBtn:hover {
+      background-color: #c9302c;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #answerText {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #ffd4d1;
+    }
+
+    /* A simple list for multiple-choice or T/F display */
+    #choicesList {
+      margin-top: 10px;
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+    #choicesList li {
+      margin: 5px 0;
+    }
+
+    /********************************************************************
+     * Main Content (Scoreboard)
+     ********************************************************************/
+    #mainContent {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center scoreboard content */
+      justify-content: flex-start;
+      padding: 10px;
+    }
+
+    #playerContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .player {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 220px;
+      background-color: #2e2e2e;
+      border: 1px solid #444;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      transition: transform 0.3s;
+    }
+    .player:hover {
+      transform: translateY(-2px);
+    }
+
+    .progress {
+      width: 30px;
+      height: 150px;
+      background-color: #555;
+      border-radius: 15px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      margin-bottom: 15px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 0%;
+      background-color: #76c7c0; /* default fill color */
+      transition: height 0.3s;
+    }
+
+    .color-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+      background-color: #76c7c0;
+      cursor: pointer;
+      border: 2px solid #333;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .color-picker {
+      display: none;
+    }
+
+    .player input[type="text"] {
+      width: 180px;
+      padding: 8px;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      text-align: center;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #444;
+      color: #f0f0f0;
+    }
+
+    .score-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .score {
+      width: 50px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #f0f0f0;
+    }
+
+    button {
+      padding: 6px 10px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .minusBtn {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    .minusBtn:hover {
+      background-color: #c0392b;
+    }
+
+    .plusBtn {
+      background-color: #27ae60;
+      color: #fff;
+    }
+    .plusBtn:hover {
+      background-color: #1e824c;
+    }
+
+    .deleteBtn {
+      margin-top: 10px;
+      background-color: #ffaf4f;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .deleteBtn:hover {
+      background-color: #dd913c;
+    }
+
+    /********************************************************************
+     * Bottom Controls
+     ********************************************************************/
+    #bottomControls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    #bottomControls label {
+      font-size: 1.2rem;
+      margin-right: 10px;
+      color: #ffffff;
+    }
+
+    #goalInput {
+      width: 120px;
+      font-size: 1.1rem;
+      padding: 6px;
+      text-align: center;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #333;
+      color: #f0f0f0;
+    }
+
+    #addPlayerBtn, #resetScoresBtn {
+      font-size: 1.1rem;
+      padding: 6px 12px;
+      background-color: #00a6a6;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin: 5px;
+    }
+    #addPlayerBtn:hover, #resetScoresBtn:hover {
+      background-color: #007e7e;
+    }
+
+    /********************************************************************
+     * Confetti Styles
+     ********************************************************************/
+    .confetti-piece {
+      position: fixed;
+      z-index: 9999;
+      width: 10px;
+      height: 10px;
+      background-color: #fff;
+      opacity: 0;
+      animation: confetti-fall 3s linear forwards;
+    }
+    @keyframes confetti-fall {
+      0% {
+        opacity: 1;
+        transform: translateY(-5%) rotateZ(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(110vh) rotateZ(720deg);
+      }
+    }
+
+    /********************************************************************
+     * Winner Modal
+     ********************************************************************/
+    #winnerModal {
+      position: fixed;
+      display: none; /* Hidden by default */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 10000; /* Above confetti */
+      align-items: center;
+      justify-content: center;
+    }
+
+    #winnerModalContent {
+      background-color: #333;
+      border: 2px solid #666;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 400px;
+      text-align: center;
+      color: #f0f0f0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    #winnerModalContent h2 {
+      margin-bottom: 15px;
+      font-size: 1.8rem;
+    }
+
+    #winnerModalClose {
+      background-color: #27ae60;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    #winnerModalClose:hover {
+      background-color: #1e824c;
+    }
+  </style>
+</head>
+<body>
+  <!-- Editable Title -->
+  <h1 contenteditable="true">Click here to edit the title</h1>
+
+  <!-- Trivia Section Below Title -->
+  <div id="triviaSection">
+    <button id="triviaButton">Get Random Question</button>
+    <div class="trivia-container hidden" id="triviaContainer">
+      <p id="questionText"></p>
+
+      <!-- For multiple choice or "T or F?" display -->
+      <ul id="choicesList" class="hidden"></ul>
+
+      <button id="revealBtn" class="hidden">Reveal Answer</button>
+      <p id="answerText" class="hidden"></p>
+    </div>
+  </div>
+
+  <!-- Main content area (players) -->
+  <div id="mainContent">
+    <!-- Container for player cards -->
+    <div id="playerContainer"></div>
+  </div>
+
+  <!-- Bottom Controls -->
+  <div id="bottomControls">
+    <label for="goalInput">Goal:</label>
+    <input type="number" id="goalInput" value="10" min="1" step="1" />
+
+    <button id="addPlayerBtn">Add Player</button>
+    <button id="resetScoresBtn">Reset Scores</button>
+  </div>
+
+  <!-- Winner Modal -->
+  <div id="winnerModal">
+    <div id="winnerModalContent">
+      <h2 id="winnerMessage">We have a winner!</h2>
+      <button id="winnerModalClose" onclick="closeWinnerModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    /********************************************************************
+     * GLOBALS
+     ********************************************************************/
+    let playerCount = 0;
+    let gameOver = false; // Prevent multiple celebrations
+
+    /********************************************************************
+     * EVENTS ON PAGE LOAD
+     ********************************************************************/
+    window.addEventListener('DOMContentLoaded', () => {
+      // Bottom buttons
+      document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
+      document.getElementById('resetScoresBtn').addEventListener('click', resetAllScores);
+      document.getElementById('goalInput').addEventListener('input', updateAllProgressBars);
+
+      // Trivia
+      document.getElementById('triviaButton').addEventListener('click', handleTriviaButtonClick);
+      document.getElementById('revealBtn').addEventListener('click', revealAnswer);
+    });
+
+    /********************************************************************
+     * SCOREBOARD FUNCTIONS
+     ********************************************************************/
+    function addPlayer() {
+      playerCount++;
+
+      const playerDiv = document.createElement('div');
+      playerDiv.className = 'player';
+
+      // Progress bar container
+      const progressContainer = document.createElement('div');
+      progressContainer.className = 'progress';
+
+      // Progress bar fill
+      const progressBar = document.createElement('div');
+      progressBar.className = 'progress-bar';
+      progressContainer.appendChild(progressBar);
+
+      // Color icon
+      const colorIcon = document.createElement('div');
+      colorIcon.className = 'color-icon';
+
+      // Hidden color input
+      const colorPicker = document.createElement('input');
+      colorPicker.type = 'color';
+      colorPicker.value = '#76c7c0';
+      colorPicker.className = 'color-picker';
+
+      // When icon is clicked, open color picker
+      colorIcon.onclick = function() {
+        colorPicker.click();
+      };
+      // When color changes, update progress bar & icon
+      colorPicker.oninput = function() {
+        progressBar.style.backgroundColor = colorPicker.value;
+        colorIcon.style.backgroundColor = colorPicker.value;
+      };
+
+      // Player name
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = 'Player ' + playerCount;
+
+      // Score controls
+      const scoreControlsDiv = document.createElement('div');
+      scoreControlsDiv.className = 'score-controls';
+
+      const minusBtn = document.createElement('button');
+      minusBtn.textContent = '-';
+      minusBtn.className = 'minusBtn';
+
+      const scoreSpan = document.createElement('span');
+      scoreSpan.className = 'score';
+      scoreSpan.textContent = '0';
+
+      const plusBtn = document.createElement('button');
+      plusBtn.textContent = '+';
+      plusBtn.className = 'plusBtn';
+
+      // Events
+      minusBtn.onclick = function() {
+        let currentScore = parseInt(scoreSpan.textContent);
+        scoreSpan.textContent = currentScore - 1;
+        updateProgressBar(scoreSpan, progressBar, nameInput.value);
+      };
+      plusBtn.onclick = function() {
+        let currentScore = parseInt(scoreSpan.textContent);
+        scoreSpan.textContent = currentScore + 1;
+        updateProgressBar(scoreSpan, progressBar, nameInput.value);
+      };
+
+      // Delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.className = 'deleteBtn';
+      deleteBtn.onclick = function() {
+        document.getElementById('playerContainer').removeChild(playerDiv);
+      };
+
+      // Assemble
+      playerDiv.appendChild(progressContainer);
+      playerDiv.appendChild(colorIcon);
+      playerDiv.appendChild(colorPicker);
+      playerDiv.appendChild(nameInput);
+
+      scoreControlsDiv.appendChild(minusBtn);
+      scoreControlsDiv.appendChild(scoreSpan);
+      scoreControlsDiv.appendChild(plusBtn);
+      playerDiv.appendChild(scoreControlsDiv);
+
+      playerDiv.appendChild(deleteBtn);
+
+      document.getElementById('playerContainer').appendChild(playerDiv);
+
+      // Init progress
+      updateProgressBar(scoreSpan, progressBar, nameInput.value);
+    }
+
+    function resetAllScores() {
+      const scoreSpans = document.querySelectorAll('.score');
+      const progressBars = document.querySelectorAll('.progress-bar');
+      const nameInputs = document.querySelectorAll('.player input[type="text"]');
+
+      scoreSpans.forEach((scoreSpan, index) => {
+        scoreSpan.textContent = '0';
+        updateProgressBar(scoreSpan, progressBars[index], nameInputs[index].value);
+      });
+
+      // Re-enable new winner
+      gameOver = false;
+    }
+
+    function updateAllProgressBars() {
+      const players = document.querySelectorAll('.player');
+      players.forEach(player => {
+        const scoreSpan = player.querySelector('.score');
+        const progressBar = player.querySelector('.progress-bar');
+        const nameInput = player.querySelector('input[type="text"]');
+        updateProgressBar(scoreSpan, progressBar, nameInput.value);
+      });
+    }
+
+    function updateProgressBar(scoreSpan, progressBar, playerName) {
+      const goalValue = parseInt(document.getElementById('goalInput').value) || 1;
+      const score = parseInt(scoreSpan.textContent);
+      let percentage = (score / goalValue) * 100;
+      if (percentage > 100) percentage = 100;
+      progressBar.style.height = percentage + '%';
+
+      // Check winner
+      if (!gameOver && score >= goalValue) {
+        gameOver = true;
+        showWinnerModal(playerName);
+        launchConfetti();
+      }
+    }
+
+    function showWinnerModal(playerName) {
+      document.getElementById('winnerMessage').textContent = `${playerName} has reached the goal!`;
+      document.getElementById('winnerModal').style.display = 'flex';
+    }
+
+    function closeWinnerModal() {
+      document.getElementById('winnerModal').style.display = 'none';
+    }
+
+    /********************************************************************
+     * CONFETTI
+     ********************************************************************/
+    function launchConfetti() {
+      // Random duration between 5 & 10 seconds
+      const runTime = 5000 + Math.random() * 5000;
+      const startTime = Date.now();
+
+      const interval = setInterval(() => {
+        if (Date.now() - startTime > runTime) {
+          clearInterval(interval);
+          return;
+        }
+        const confettiBatchCount = 10;
+        for (let i = 0; i < confettiBatchCount; i++) {
+          createConfettiPiece();
+        }
+      }, 300);
+    }
+
+    function createConfettiPiece() {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti-piece';
+
+      const colors = [
+        '#f94144','#f3722c','#f8961e','#f9c74f','#90be6d',
+        '#43aa8b','#577590','#ff5f5f','#ffaf4f','#c471ed'
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.backgroundColor = randomColor;
+
+      const randomX = Math.floor(Math.random() * window.innerWidth);
+      confetti.style.left = randomX + 'px';
+
+      const drift = (Math.random() - 0.5) * 2; // between -1 and 1
+      confetti.style.transform = `translateX(${drift}rem)`;
+
+      document.body.appendChild(confetti);
+
+      setTimeout(() => {
+        if (document.body.contains(confetti)) {
+          document.body.removeChild(confetti);
+        }
+      }, 3000);
+    }
+
+    /********************************************************************
+     * RANDOM TRIVIA (Only Easy or Medium) + 5s COOLDOWN
+     ********************************************************************/
+
+    // Helper to decode HTML entities
+    function decodeHTML(html) {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = html;
+      return txt.value;
+    }
+
+    // Instead of easy/medium/hard, only pick easy or medium
+    function getRandomDifficulty() {
+      const diffs = ['easy', 'medium'];
+      return diffs[Math.floor(Math.random() * diffs.length)];
+    }
+
+    // Keep category random, but omit 'hard' from possibilities
+    function getRandomCategory() {
+      // Category IDs from 9 to 32
+      return Math.floor(Math.random() * (32 - 9 + 1)) + 9;
+    }
+    function getRandomType() {
+      const types = ['multiple', 'boolean'];
+      return types[Math.floor(Math.random() * types.length)];
+    }
+
+    // Shuffle array in-place (Fisher-Yates)
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // This function handles the button click + cooldown
+    function handleTriviaButtonClick() {
+      // 1) Start a 5-second cooldown
+      startTriviaCooldown();
+
+      // 2) Fetch the actual question
+      fetchRandomQuestion();
+    }
+
+    // Start a 5s cooldown, disabling the button & counting down
+    function startTriviaCooldown() {
+      const button = document.getElementById('triviaButton');
+      button.disabled = true;
+      let countdown = 5;
+
+      const interval = setInterval(() => {
+        button.textContent = countdown;
+        countdown--;
+        if (countdown < 0) {
+          clearInterval(interval);
+          button.textContent = 'Get Random Question';
+          button.disabled = false;
+        }
+      }, 1000);
+    }
+
+    async function fetchRandomQuestion() {
+      const category = getRandomCategory();
+      const difficulty = getRandomDifficulty();
+      const qType = getRandomType();
+
+      const url = `https://opentdb.com/api.php?amount=1&category=${category}&difficulty=${difficulty}&type=${qType}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const triviaContainer = document.getElementById('triviaContainer');
+        const questionText = document.getElementById('questionText');
+        const revealBtn = document.getElementById('revealBtn');
+        const answerText = document.getElementById('answerText');
+        const choicesList = document.getElementById('choicesList');
+
+        if (data.results && data.results.length > 0) {
+          const [questionObj] = data.results;
+          const question = decodeHTML(questionObj.question);
+          const correctAnswer = decodeHTML(questionObj.correct_answer);
+          const incorrectAnswers = questionObj.incorrect_answers.map(decodeHTML);
+
+          // Show container
+          triviaContainer.classList.remove('hidden');
+
+          // Populate question
+          questionText.textContent = `Q: ${question}`;
+
+          // Hide answer initially
+          revealBtn.classList.remove('hidden');
+          answerText.classList.add('hidden');
+          answerText.textContent = `A: ${correctAnswer}`;
+
+          // Clear old choices
+          choicesList.innerHTML = '';
+          choicesList.classList.add('hidden');
+
+          if (questionObj.type === 'multiple') {
+            // multiple-choice
+            const allChoices = [correctAnswer, ...incorrectAnswers];
+            shuffleArray(allChoices);
+
+            // Show multiple-choice answers
+            allChoices.forEach(choice => {
+              const li = document.createElement('li');
+              li.textContent = choice;
+              choicesList.appendChild(li);
+            });
+            choicesList.classList.remove('hidden');
+
+          } else {
+            // boolean (True/False)
+            const li = document.createElement('li');
+            li.textContent = 'T or F?';
+            choicesList.appendChild(li);
+            choicesList.classList.remove('hidden');
+          }
+
+        } else {
+          // No questions found
+          questionText.textContent = 'No questions found. Please try again.';
+          revealBtn.classList.add('hidden');
+          answerText.classList.add('hidden');
+          choicesList.classList.add('hidden');
+          triviaContainer.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error fetching trivia:', error);
+        const triviaContainer = document.getElementById('triviaContainer');
+        const questionText = document.getElementById('questionText');
+        const revealBtn = document.getElementById('revealBtn');
+        const answerText = document.getElementById('answerText');
+        const choicesList = document.getElementById('choicesList');
+
+        questionText.textContent = 'Error fetching question. Please try again.';
+        revealBtn.classList.add('hidden');
+        answerText.classList.add('hidden');
+        choicesList.classList.add('hidden');
+        triviaContainer.classList.remove('hidden');
+      }
+    }
+
+    function revealAnswer() {
+      document.getElementById('answerText').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
